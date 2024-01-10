@@ -1,0 +1,31 @@
+name: release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: '*'
+
+jobs:
+  packages:
+    permissions:
+        contents: write
+    runs-on: ubuntu-latest
+    env:
+      BUILDER: "Github Actions <noreply@github.com>"
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: install dependencies
+      run: |
+        sudo wget https://github.com/jgm/pandoc/releases/download/3.1.11.1/pandoc-3.1.11.1-1-amd64.deb
+        sudo dpkg -i pandoc-3.1.11.1-1-amd64.deb
+        rm -f pandoc-3.1.11.1-1-amd64.deb
+
+    - name: build artifacts
+      run: make build-standalone
+
+    - name: create release
+      run: make github-release
+      env:
+        GH_TOKEN: ${{ github.token }}
