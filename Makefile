@@ -37,6 +37,10 @@ install: release man
 local-install:
 	$(MAKE) install PREFIX=usr/local
 
+.PHONY: clean
+clean:
+	rm -rf ./target $(MANPAGE)
+
 .DEFAULT_GOAL := build
 
 ###
