@@ -124,7 +124,7 @@ mod tests {
     fn test_extractor_list() {
         let extractor = Extractor::new(String::from("./test/fixtures/simple"), None);
         let attachments = extractor.list().unwrap();
-        assert_eq!(1, attachments.len());
+        assert_eq!(2, attachments.len());
     }
     #[test]
     fn test_extractor_extract() {
