@@ -43,4 +43,4 @@ brew install mrtazz/oss/mae
 
 ## Thanks
 
-Inspiration for this came from the fabulous @till
+Inspiration for this came from the fabulous [@till](https://github.com/till)
