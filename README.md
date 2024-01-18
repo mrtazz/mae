@@ -31,7 +31,15 @@ Options:
 postsynchook = mae extract --maildir=/home/mrtazz/mails/INBOX --output-dir=~/Documents
 ```
 
+## Installation
 
+There are pre-built artifacts [on the releases page](https://github.com/mrtazz/mae/releases)
+or on macOS it's available in homebrew:
+
+```
+brew tap mrtazz/oss
+brew install mrtazz/oss/mae
+```
 
 ## Thanks
 
