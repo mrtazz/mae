@@ -7,7 +7,7 @@
 
 ## Usage
 
-``
+```
 % mae export --maildir=test/fixtures/simple --output-dir=test/tmp_output
 ```
 
