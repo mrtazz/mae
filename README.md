@@ -28,7 +28,7 @@ Options:
 ### With offlineimap
 
 ```
-postsynchook = mae extract --maildir=/home/mrtazz/mails/INBOX --output-dir=~/Documents
+postsynchook = mae extract --maildir=/home/mrtazz/mails/INBOX --output-dir ~/Documents
 ```
 
 ## Installation
