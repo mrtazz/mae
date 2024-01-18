@@ -10,17 +10,12 @@ const SUFFIXES_TO_EXPORT: &'static [&'static str] = &[".pdf", ".doc"];
 struct Attachment {
     name: String,
     subject: String,
-    date: chrono::DateTime<Utc>,
+    date: chrono::NaiveDate,
     contents: Vec<u8>,
 }
 
 impl Attachment {
-    pub fn new(
-        name: String,
-        subject: String,
-        date: chrono::DateTime<Utc>,
-        contents: Vec<u8>,
-    ) -> Self {
+    pub fn new(name: String, subject: String, date: chrono::NaiveDate, contents: Vec<u8>) -> Self {
         Attachment {
             name: name,
             subject: subject,
@@ -33,7 +28,7 @@ impl Attachment {
 pub struct Extractor {
     maildir: String,
     output_dir: Option<String>,
-    since: Option<DateTime<Utc>>,
+    since: Option<NaiveDate>,
     suffixes: Vec<String>,
 }
 
@@ -49,6 +44,12 @@ impl Extractor {
             since: None,
         }
     }
+
+    pub fn since(mut self, since: NaiveDate) -> Self {
+        self.since = Some(since);
+        self
+    }
+
     pub fn list(&self) -> Result<Vec<String>, String> {
         let mut attachments = Vec::<String>::new();
         self.iterate_over_attachments(|attachment| {
@@ -90,6 +91,26 @@ impl Extractor {
             for message in folder {
                 let message = message.unwrap();
                 let parsed_message = &MessageParser::default().parse(message.contents()).unwrap();
+
+                // check whether the message should be considered or is too old
+                let msg_date = parsed_message.date().unwrap();
+                let naive_date = NaiveDate::from_ymd_opt(
+                    i32::from(msg_date.year),
+                    u32::from(msg_date.month),
+                    u32::from(msg_date.day),
+                )
+                .unwrap();
+
+                match self.since {
+                    Some(since) => {
+                        if naive_date < since {
+                            continue;
+                        }
+                    }
+                    _ => {}
+                }
+
+                // message is new enough, let's see if we have attachments we want to export
                 for attachment in parsed_message.attachments() {
                     let attachment_name = attachment.attachment_name().unwrap_or("Untitled");
                     let mut export = false;
@@ -102,11 +123,7 @@ impl Extractor {
                         callback(Attachment::new(
                             String::from(attachment_name),
                             String::from(parsed_message.subject().unwrap()),
-                            chrono::DateTime::from_timestamp(
-                                parsed_message.date().unwrap().to_timestamp(),
-                                0,
-                            )
-                            .unwrap(),
+                            naive_date,
                             attachment.contents().to_vec(),
                         ));
                     }
@@ -121,10 +138,18 @@ impl Extractor {
 mod tests {
     use super::*;
     #[test]
-    fn test_extractor_list() {
+    fn test_extractor_list_all() {
         let extractor = Extractor::new(String::from("./test/fixtures/simple"), None);
         let attachments = extractor.list().unwrap();
         assert_eq!(2, attachments.len());
+    }
+
+    #[test]
+    fn test_extractor_list_with_since() {
+        let extractor = Extractor::new(String::from("./test/fixtures/simple"), None)
+            .since(NaiveDate::from_ymd_opt(2024, 01, 10).unwrap());
+        let attachments = extractor.list().unwrap();
+        assert_eq!(1, attachments.len());
     }
     #[test]
     fn test_extractor_extract() {
