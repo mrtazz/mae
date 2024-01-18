@@ -103,6 +103,8 @@ impl Extractor {
 
                 match self.since {
                     Some(since) => {
+                        // if the message data is earlier than our provided since config we skip
+                        // this one
                         if naive_date < since {
                             continue;
                         }

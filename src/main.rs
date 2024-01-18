@@ -17,8 +17,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Export all attachments from mails in given maildir
-    Export {
+    /// Extract all attachments from mails in given maildir
+    Extract {
         /// Path to the maildir to parse for attachments
         #[arg(long)]
         maildir: String,
@@ -69,7 +69,7 @@ fn main() {
                 println!("{}", attachment);
             }
         }
-        Some(Commands::Export {
+        Some(Commands::Extract {
             maildir,
             output_dir,
             since,
