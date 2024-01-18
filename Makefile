@@ -23,7 +23,7 @@ release:
 	cargo build --release
 
 .PHONY: test
-test:
+test: test-clean
 	CARGO_TERM_COLOR=always cargo test --verbose --workspace
 
 .PHONY: install
@@ -38,8 +38,12 @@ local-install:
 	$(MAKE) install PREFIX=usr/local
 
 .PHONY: clean
-clean:
+clean: test-clean
 	rm -rf ./target $(MANPAGE)
+
+.PHONY: test-clean
+test-clean:
+	rm -rf ./test/tmp_output/*
 
 .DEFAULT_GOAL := build
 
