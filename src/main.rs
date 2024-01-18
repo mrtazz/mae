@@ -1,3 +1,4 @@
+use chrono::prelude::*;
 use clap::{Parser, Subcommand};
 use current_platform::{COMPILED_ON, CURRENT_PLATFORM};
 
@@ -10,9 +11,6 @@ const VERSION: Option<&'static str> = option_env!("VERSION");
 #[command(arg_required_else_help(true))]
 #[command(disable_version_flag(true))]
 struct Cli {
-    /// Timestamp in the format YYYY-MM-DD for the oldest message to find attachments for
-    #[arg(long)]
-    since: Option<String>,
     #[command(subcommand)]
     command: Option<Commands>,
 }
@@ -27,12 +25,18 @@ enum Commands {
         /// Path to output directory to write attachments to (has to exist)
         #[arg(long)]
         output_dir: String,
+        /// Timestamp in the format YYYY-MM-DD for the oldest message to find attachments for
+        #[arg(long)]
+        since: Option<String>,
     },
     /// List all available things
     List {
         /// Path to the maildir to parse for attachments
         #[arg(long)]
         maildir: String,
+        /// Timestamp in the format YYYY-MM-DD for the oldest message to find attachments for
+        #[arg(long)]
+        since: Option<String>,
     },
     /// Print version and exit
     Version {},
@@ -42,8 +46,25 @@ fn main() {
     let cli = Cli::parse();
 
     match &cli.command {
-        Some(Commands::List { maildir }) => {
-            let extractor = extractor::Extractor::new(String::from(maildir), None);
+        Some(Commands::List { maildir, since }) => {
+            let mut extractor = extractor::Extractor::new(String::from(maildir), None);
+
+            match since {
+                Some(since) => match NaiveDate::parse_from_str(&since, "%Y-%m-%d") {
+                    Ok(parsed_since) => {
+                        extractor = extractor.since(parsed_since);
+                    }
+                    Err(e) => {
+                        println!(
+                            "Not able to parse provided --since={} into date: {}",
+                            since, e
+                        );
+                        return;
+                    }
+                },
+                _ => {}
+            }
+
             for attachment in extractor.list().unwrap() {
                 println!("{}", attachment);
             }
@@ -51,9 +72,26 @@ fn main() {
         Some(Commands::Export {
             maildir,
             output_dir,
+            since,
         }) => {
-            let extractor =
+            let mut extractor =
                 extractor::Extractor::new(String::from(maildir), Some(String::from(output_dir)));
+
+            match since {
+                Some(since) => match NaiveDate::parse_from_str(&since, "%Y-%m-%d") {
+                    Ok(parsed_since) => {
+                        extractor = extractor.since(parsed_since);
+                    }
+                    Err(e) => {
+                        println!(
+                            "Not able to parse provided --since={} into date: {}",
+                            since, e
+                        );
+                        return;
+                    }
+                },
+                _ => {}
+            }
             match extractor.extract() {
                 Err(e) => {
                     println!("Error exporting attachments:: {}", e);
