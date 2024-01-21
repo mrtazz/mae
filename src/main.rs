@@ -3,6 +3,7 @@ use clap::{Parser, Subcommand};
 use current_platform::{COMPILED_ON, CURRENT_PLATFORM};
 
 pub mod extractor;
+pub mod sanitize;
 
 const VERSION: Option<&'static str> = option_env!("VERSION");
 

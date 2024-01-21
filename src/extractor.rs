@@ -5,6 +5,8 @@ use mail_parser::mailbox::maildir::FolderIterator;
 use mail_parser::MessageParser;
 use mail_parser::MimeHeaders;
 
+use crate::sanitize;
+
 const SUFFIXES_TO_EXPORT: &'static [&'static str] = &[".pdf", ".doc"];
 
 struct Attachment {
@@ -60,15 +62,21 @@ impl Extractor {
 
     pub fn extract(&self) -> Result<(), String> {
         self.iterate_over_attachments(|attachment| {
-            let out_file = PathBuf::from(self.output_dir.as_ref().unwrap()).join(format!(
+            let filename = sanitize::sanitize_filename(&format!(
                 "{}-{}-{}",
                 attachment.date.format("%Y-%m-%d"),
                 attachment.subject,
                 attachment.name
             ));
+            let out_file = PathBuf::from(self.output_dir.as_ref().unwrap()).join(filename);
             if !out_file.exists() {
                 println!("Writing to {}...", out_file.to_str().unwrap());
-                std::fs::write(out_file, attachment.contents).unwrap();
+                match std::fs::write(out_file, attachment.contents) {
+                    Err(e) => {
+                        println!("Failed to write: {}", e);
+                    }
+                    _ => {}
+                }
             }
         })?;
         Ok(())
