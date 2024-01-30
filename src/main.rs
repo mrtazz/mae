@@ -5,6 +5,7 @@ use current_platform::{COMPILED_ON, CURRENT_PLATFORM};
 pub mod extractor;
 pub mod sanitize;
 
+const VERSION_FROM_CARGO: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 const VERSION: Option<&'static str> = option_env!("VERSION");
 
 #[derive(Parser)]
@@ -102,8 +103,8 @@ fn main() {
         }
         Some(Commands::Version {}) => {
             println!(
-                "tool {} {} compiled on {}",
-                VERSION.unwrap_or("dev"),
+                "mae {} {} compiled on {}",
+                VERSION.unwrap_or(VERSION_FROM_CARGO.unwrap_or("dev")),
                 CURRENT_PLATFORM,
                 COMPILED_ON
             )
