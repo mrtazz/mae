@@ -52,6 +52,11 @@ impl Extractor {
         self
     }
 
+    pub fn with_suffixes(mut self, suffixes: Vec<String>) -> Self {
+        self.suffixes = suffixes;
+        self
+    }
+
     pub fn list(&self) -> Result<Vec<String>, String> {
         let mut attachments = Vec::<String>::new();
         self.iterate_over_attachments(|attachment| {
