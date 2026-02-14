@@ -6,7 +6,7 @@ on:
     tags: '*'
 
 jobs:
-  packages:
+  release:
     permissions:
         contents: write
     runs-on: ubuntu-latest
@@ -14,18 +14,54 @@ jobs:
       BUILDER: "Github Actions <noreply@github.com>"
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
 
     - name: install dependencies
       run: |
-        sudo wget https://github.com/jgm/pandoc/releases/download/3.1.11.1/pandoc-3.1.11.1-1-amd64.deb
-        sudo dpkg -i pandoc-3.1.11.1-1-amd64.deb
-        rm -f pandoc-3.1.11.1-1-amd64.deb
+        sudo wget https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-${PANDOC_PKG_VERSION}-amd64.deb
+        sudo dpkg -i pandoc-${PANDOC_VERSION}-${PANDOC_PKG_VERSION}-amd64.deb
+        rm -f pandoc-${PANDOC_VERSION}-${PANDOC_PKG_VERSION}-amd64.deb
+      env:
+        PANDOC_VERSION: 3.9
+        PANDOC_PKG_VERSION: 1
 
-    - name: build artifacts
-      run: make build-standalone
+    - name: build man page
+      run: make man
 
     - name: create release
       run: make github-release
+      env:
+        GH_TOKEN: ${{ github.token }}
+
+  artifacts:
+    needs: release
+    name: build ${{matrix.os}} artifacts
+    permissions:
+        contents: write
+    runs-on: ${{matrix.os}}
+    env:
+      BUILDER: "Github Actions <noreply@github.com>"
+
+    strategy:
+      matrix:
+        include:
+          - build: linux
+            arch: amd64
+            os: ubuntu-latest
+          - build: macos
+            arch: arm64
+            os: macos-latest
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: build artifacts
+      run: make build-standalone
+      env:
+        BUILD_OS: ${{matrix.build}}
+        BUILD_ARCH: ${{matrix.arch}}
+
+    - name: upload artifacts to release
+      run: make upload-release-artifacts
       env:
         GH_TOKEN: ${{ github.token }}
