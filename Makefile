@@ -50,21 +50,29 @@ test-clean:
 ###
 # Release build tasks
 ###
+BUILD_OS ?= "macos"
+BUILD_ARCH ?= "arm64"
+RELEASE_BIN := "./target/release/$(NAME)"
+ARTIFACT_BIN := $(NAME)-$(VERSION).$(BUILD_OS).$(BUILD_ARCH)
 
 RELEASE_ARTIFACTS_DIR := .release_artifacts
-CHECKSUM_FILE := $(RELEASE_ARTIFACTS_DIR)/checksums.txt
+CHECKSUM_FILE := $(RELEASE_ARTIFACTS_DIR)/$(ARTIFACT_BIN).checksum.txt
 
 $(RELEASE_ARTIFACTS_DIR):
 	install -d $@
 
 .PHONY: build-standalone
-build-standalone: man release $(RELEASE_ARTIFACTS_DIR)
-	mv $(MANPAGE) $(RELEASE_ARTIFACTS_DIR)/
-	mv $(RELEASE_BIN) $(RELEASE_ARTIFACTS_DIR)/$(NAME)-$(VERSION).linux.amd64
-	shasum -a 256 $(RELEASE_ARTIFACTS_DIR)/$(NAME)-$(VERSION).linux.amd64 >> $(CHECKSUM_FILE)
+build-standalone: release $(RELEASE_ARTIFACTS_DIR)
+	mv $(RELEASE_BIN) $(RELEASE_ARTIFACTS_DIR)/$(ARTIFACT_BIN)
+	shasum -a 256 $(RELEASE_ARTIFACTS_DIR)/$(ARTIFACT_BIN) >> $(CHECKSUM_FILE)
 
 
 .PHONY: github-release
 github-release:
-	gh release create $(VERSION) --title 'Release $(VERSION)' \
-	 	--notes-file docs/releases/$(VERSION).md $(RELEASE_ARTIFACTS_DIR)/*
+	gh release create $(VERSION) --title 'v$(VERSION)' \
+	 	--notes-file docs/releases/$(VERSION).md $(MANPAGE)
+
+.PHONY: upload-release-artifacts
+upload-release-artifacts:
+	gh release upload $(VERSION) $(RELEASE_ARTIFACTS_DIR)/*
+
