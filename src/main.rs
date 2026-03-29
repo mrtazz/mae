@@ -30,8 +30,11 @@ enum Commands {
         /// Timestamp in the format YYYY-MM-DD for the oldest message to find attachments for
         #[arg(long)]
         since: Option<String>,
+        /// Comma separated list of file suffixes to export (e.g. .pdf,.doc)
+        #[arg(long)]
+        suffixes: Option<String>,
     },
-    /// List all available things
+    /// List all available attachments with the given (or default) suffixes
     List {
         /// Path to the maildir to parse for attachments
         #[arg(long)]
@@ -39,6 +42,9 @@ enum Commands {
         /// Timestamp in the format YYYY-MM-DD for the oldest message to find attachments for
         #[arg(long)]
         since: Option<String>,
+        /// Comma separated list of file suffixes to export (e.g. .pdf,.doc)
+        #[arg(long)]
+        suffixes: Option<String>,
     },
     /// Print version and exit
     Version {},
@@ -48,11 +54,15 @@ fn main() {
     let cli = Cli::parse();
 
     match &cli.command {
-        Some(Commands::List { maildir, since }) => {
+        Some(Commands::List {
+            maildir,
+            since,
+            suffixes,
+        }) => {
             let mut extractor = extractor::Extractor::new(String::from(maildir), None);
 
-            match since {
-                Some(since) => match NaiveDate::parse_from_str(&since, "%Y-%m-%d") {
+            if let Some(since) = since {
+                match NaiveDate::parse_from_str(&since, "%Y-%m-%d") {
                     Ok(parsed_since) => {
                         extractor = extractor.since(parsed_since);
                     }
@@ -63,8 +73,11 @@ fn main() {
                         );
                         return;
                     }
-                },
-                _ => {}
+                }
+            }
+            if let Some(suffixes) = suffixes {
+                extractor =
+                    extractor.with_suffixes(suffixes.split(",").map(|s| s.to_string()).collect());
             }
 
             for attachment in extractor.list().unwrap() {
@@ -75,12 +88,13 @@ fn main() {
             maildir,
             output_dir,
             since,
+            suffixes,
         }) => {
             let mut extractor =
                 extractor::Extractor::new(String::from(maildir), Some(String::from(output_dir)));
 
-            match since {
-                Some(since) => match NaiveDate::parse_from_str(&since, "%Y-%m-%d") {
+            if let Some(since) = since {
+                match NaiveDate::parse_from_str(&since, "%Y-%m-%d") {
                     Ok(parsed_since) => {
                         extractor = extractor.since(parsed_since);
                     }
@@ -91,8 +105,11 @@ fn main() {
                         );
                         return;
                     }
-                },
-                _ => {}
+                }
+            }
+            if let Some(suffixes) = suffixes {
+                extractor =
+                    extractor.with_suffixes(suffixes.split(",").map(|s| s.to_string()).collect());
             }
             match extractor.extract() {
                 Err(e) => {
